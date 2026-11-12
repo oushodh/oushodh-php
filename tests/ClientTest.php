@@ -209,7 +209,24 @@ final class ClientTest extends TestCase
         } catch (ServerException $e) {
             self::assertSame(502, $e->status);
             self::assertNull($e->errorCode);
+            self::assertSame('HTTP 502', $e->getMessage());
         }
+    }
+
+    public function testA429ThatIsNotRateLimitedIsNotRetried(): void
+    {
+        $client = $this->client([new Response(429, ['Retry-After' => '5'], 'Too many')]);
+
+        try {
+            $client->meta();
+            self::fail('No exception');
+        } catch (RateLimitException $e) {
+            self::assertNull($e->errorCode);
+            self::assertSame(5, $e->retryAfter);
+        }
+
+        self::assertSame([], $this->sleeps);
+        self::assertCount(1, $this->history);
     }
 
     public function testRateLimitWaitsRetryAfterThenSucceeds(): void

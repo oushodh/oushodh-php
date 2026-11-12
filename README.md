@@ -171,14 +171,15 @@ them. The key never appears in an error message.
 
 ## Rate limits
 
-Your plan sets how many requests each key may make in a minute, and how many your account may make in a month. See
-[Rate limits](https://oushodh.dev/docs/rate-limits).
+Your plan sets how many requests each key may make in a minute (60 a minute on Developer). It also sets how many
+requests your account may make in a month. See [Rate limits](https://oushodh.dev/docs/rate-limits).
 
 - Over the minute's limit, the API answers `429 rate_limited`. The `Retry-After` header says how many seconds to wait.
   The client waits that long and tries again, up to `maxRetries` times. After that it throws a `RateLimitException`
   with the seconds in `retryAfter`.
-- When the month's requests are used up, the API answers `429 quota_exceeded` until the next month. The client throws
-  at once: `retryAfter` counts the seconds to the next month.
+- When the month's requests are used up, the API answers `429 quota_exceeded` until the next month. The client never
+  waits for it: it throws a `RateLimitException` at once, and `retryAfter` counts the seconds to the next month.
+- The client retries no other `429`.
 - After a `5xx` or a network error, the client waits a little longer each time (0.5 s, then 1 s, and so on, plus a
   random part) and tries again, up to `maxRetries` times.
 

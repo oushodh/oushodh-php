@@ -232,7 +232,7 @@ class Client
 
             $error = $this->error($response);
             $retryable = $status >= 500
-                || ($error instanceof RateLimitException && $error->errorCode !== ErrorCode::QuotaExceeded);
+                || ($error instanceof RateLimitException && $error->errorCode === ErrorCode::RateLimited);
 
             if (!$canRetry || !$retryable) {
                 throw $error;
@@ -257,7 +257,7 @@ class Client
         $data = json_decode((string) $response->getBody(), true);
         $error = \is_array($data) && \is_array($data['error'] ?? null) ? $data['error'] : [];
         $code = \is_string($error['code'] ?? null) ? ErrorCode::tryFrom($error['code']) : null;
-        $message = \is_string($error['message'] ?? null) ? $error['message'] : 'The Oushodh API answered HTTP ' . $status;
+        $message = \is_string($error['message'] ?? null) ? $error['message'] : 'HTTP ' . $status;
         $message = $this->redact($message);
 
         if ($status === 429) {
