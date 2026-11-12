@@ -1,0 +1,37 @@
+name: Release
+
+# Packagist reads versions from the Git tags of this repo, so a release is a tag plus a GitHub release.
+# This workflow needs no stored secrets: it uses the job's own GITHUB_TOKEN.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+      - run: composer install --no-progress
+      - run: composer lint
+      - run: composer analyse
+      - run: composer test
+      - name: Check the tag matches Client::VERSION
+        run: |
+          version=$(php -r 'require "vendor/autoload.php"; echo Oushodh\Client::VERSION;')
+
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match Client::VERSION $version"
+            exit 1
+          fi
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "See CHANGELOG.md."

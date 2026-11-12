@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, types and tests (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - run: composer install --no-progress
+      - run: composer lint
+      - run: composer analyse
+      - run: composer test
+
+  # The dev tools need PHP 8.4. On 8.2 and 8.3, check that the library itself parses and loads.
+  older-php:
+    name: Syntax (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - run: find src -name '*.php' -print0 | xargs -0 -n1 php -l
+      - run: composer remove --dev --no-update phpunit/phpunit phpstan/phpstan friendsofphp/php-cs-fixer
+      - run: composer update --no-progress
+      - run: php -r 'require "vendor/autoload.php"; new Oushodh\Client("oush_test_123");'
