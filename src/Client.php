@@ -6,21 +6,13 @@ namespace Oushodh;
 
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\TransferException;
-use Oushodh\Exception\AuthenticationException;
-use Oushodh\Exception\BadRequestException;
-use Oushodh\Exception\ConnectionException;
-use Oushodh\Exception\NotFoundException;
 use Oushodh\Exception\OushodhException;
-use Oushodh\Exception\PlanException;
-use Oushodh\Exception\RateLimitException;
-use Oushodh\Exception\ServerException;
+use Oushodh\Http\Transport;
 use Oushodh\Model\Medicine;
 use Oushodh\Model\MedicineDetail;
 use Oushodh\Model\Meta;
 use Oushodh\Model\Page;
 use Oushodh\Model\SearchResult;
-use Psr\Http\Message\ResponseInterface;
 
 /**
  * A client for the Oushodh API.
@@ -30,9 +22,8 @@ class Client
     public const VERSION = '0.1.0';
     public const DEFAULT_BASE_URL = 'https://api.oushodh.dev';
 
-    private string $apiKey;
     private string $baseUrl;
-    private ClientInterface $http;
+    private Transport $transport;
 
     /**
      * @param string|null                   $apiKey     your key; when null, the OUSHODH_API_KEY env var
@@ -54,13 +45,19 @@ class Client
             throw new \InvalidArgumentException('No API key. Pass apiKey, or set the OUSHODH_API_KEY env var.');
         }
 
-        $this->apiKey = $key;
         $this->baseUrl = rtrim($baseUrl, '/');
-        $this->http = match (true) {
-            $http instanceof ClientInterface => $http,
-            $http !== null => new GuzzleClient(['handler' => $http]),
-            default => new GuzzleClient(),
-        };
+        $this->transport = new Transport(
+            match (true) {
+                $http instanceof ClientInterface => $http,
+                $http !== null => new GuzzleClient(['handler' => $http]),
+                default => new GuzzleClient(),
+            },
+            $key,
+            'oushodh-php/' . self::VERSION,
+            $timeout,
+            $maxRetries,
+            $this->sleep(...),
+        );
     }
 
     /**
@@ -157,7 +154,7 @@ class Client
      */
     public function getImage(string $file): string
     {
-        return (string) $this->send($this->imageUrl($file), [], false)->getBody();
+        return (string) $this->transport->get($this->imageUrl($file), [], false)->getBody();
     }
 
     /**
@@ -175,7 +172,7 @@ class Client
      */
     private function json(string $path, array $query = []): array
     {
-        $body = (string) $this->send($this->baseUrl . $path, $query, true)->getBody();
+        $body = (string) $this->transport->get($this->baseUrl . $path, $query, true)->getBody();
 
         try {
             $data = json_decode($body, true, 512, \JSON_THROW_ON_ERROR);
@@ -189,95 +186,5 @@ class Client
 
         /** @var array<string, mixed> $data */
         return $data;
-    }
-
-    /**
-     * @param array<string, int|string|null> $query
-     */
-    private function send(string $url, array $query, bool $withKey): ResponseInterface
-    {
-        $headers = ['User-Agent' => 'oushodh-php/' . self::VERSION, 'Accept' => 'application/json'];
-
-        if ($withKey) {
-            $headers['Authorization'] = 'Bearer ' . $this->apiKey;
-        }
-
-        $options = [
-            'headers' => $headers,
-            'query' => array_filter($query, static fn($value) => $value !== null),
-            'timeout' => $this->timeout,
-            'http_errors' => false,
-        ];
-
-        for ($attempt = 0; ; $attempt++) {
-            $canRetry = $attempt < $this->maxRetries;
-
-            try {
-                $response = $this->http->request('GET', $url, $options);
-            } catch (TransferException $e) {
-                if ($canRetry) {
-                    $this->sleep($this->backoff($attempt));
-
-                    continue;
-                }
-
-                throw new ConnectionException($this->redact('No answer from the Oushodh API: ' . $e->getMessage()));
-            }
-
-            $status = $response->getStatusCode();
-
-            if ($status < 400) {
-                return $response;
-            }
-
-            $error = $this->error($response);
-            $retryable = $status >= 500
-                || ($error instanceof RateLimitException && $error->errorCode === ErrorCode::RateLimited);
-
-            if (!$canRetry || !$retryable) {
-                throw $error;
-            }
-
-            $wait = $error instanceof RateLimitException && $error->retryAfter !== null
-                ? $error->retryAfter * 1000
-                : $this->backoff($attempt);
-
-            $this->sleep($wait);
-        }
-    }
-
-    private function backoff(int $attempt): int
-    {
-        return 500 * 2 ** $attempt + random_int(0, 250);
-    }
-
-    private function error(ResponseInterface $response): OushodhException
-    {
-        $status = $response->getStatusCode();
-        $data = json_decode((string) $response->getBody(), true);
-        $error = \is_array($data) && \is_array($data['error'] ?? null) ? $data['error'] : [];
-        $code = \is_string($error['code'] ?? null) ? ErrorCode::tryFrom($error['code']) : null;
-        $message = \is_string($error['message'] ?? null) ? $error['message'] : 'HTTP ' . $status;
-        $message = $this->redact($message);
-
-        if ($status === 429) {
-            $retryAfter = $response->getHeaderLine('Retry-After');
-
-            return new RateLimitException($message, $code, ctype_digit($retryAfter) ? (int) $retryAfter : null);
-        }
-
-        return match (true) {
-            $status === 400 => new BadRequestException($message, $status, $code),
-            $status === 401 => new AuthenticationException($message, $status, $code),
-            $status === 403 => new PlanException($message, $status, $code),
-            $status === 404 => new NotFoundException($message, $status, $code),
-            $status >= 500 => new ServerException($message, $status, $code),
-            default => new OushodhException($message, $status, $code),
-        };
-    }
-
-    private function redact(string $text): string
-    {
-        return str_replace($this->apiKey, '[redacted]', $text);
     }
 }

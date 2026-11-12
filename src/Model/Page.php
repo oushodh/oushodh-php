@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Oushodh\Model;
 
-use Oushodh\Data;
-
 /**
  * One page of medicines. Pass `next` back as the cursor for the next page; it is null on the last page.
  * `total` is how many medicines match, across all pages.

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Oushodh\Model;
 
-use Oushodh\Data;
-
 /**
  * Every MRP the sources state for a medicine: per unit, per strip and per pack. Amounts are in BDT.
  */

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Oushodh\Model;
 
-use Oushodh\Data;
-
 /**
  * The MRP of one pack or box, from `prices.packs`. `units` is null when the source does not say.
  */

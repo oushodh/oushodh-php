@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Oushodh\Model;
 
-use Oushodh\Data;
 use Oushodh\MedicineType;
 
 /**

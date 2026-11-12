@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Oushodh\Model;
 
-use Oushodh\Data;
-
 /**
  * The account the key belongs to, its ID profile, the medicines the key reads and the last import.
  */
