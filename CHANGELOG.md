@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.0 (12 Nov, 2026)
 
 - First version: a client for the public `/v1` API.
 - `meta()`, `listMedicines()`, `medicines()` (pages to the end), `search()`, `getMedicine()`, `imageUrl()` and

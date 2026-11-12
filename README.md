@@ -15,14 +15,11 @@ The SDK needs PHP 8.2 or newer. Its one runtime dependency is Guzzle 8.
 
 ## Install
 
-Install it from GitHub. Add the repository to Composer, then require the package:
+Install it with Composer from Packagist:
 
 ```sh
-composer config repositories.oushodh vcs https://github.com/oushodh/oushodh-php
-composer require oushodh/oushodh-php:dev-main
+composer require oushodh/oushodh-php
 ```
-
-Install from Packagist is coming soon.
 
 ## Quickstart
 
