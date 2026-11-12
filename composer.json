@@ -47,6 +47,8 @@
     },
     "support": {
         "docs": "https://oushodh.dev/docs",
-        "email": "support@oushodh.dev"
+        "email": "support@oushodh.dev",
+        "issues": "https://github.com/oushodh/oushodh-php/issues",
+        "source": "https://github.com/oushodh/oushodh-php"
     }
 }
