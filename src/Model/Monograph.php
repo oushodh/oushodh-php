@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Oushodh\Model;
 
-use Oushodh\Data;
-
 /**
  * The medical text of a medicine, as its source wrote it, in English. Some text holds HTML tags.
  * It is information for professionals, not medical advice.

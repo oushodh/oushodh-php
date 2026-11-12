@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Oushodh\Model;
 
-use Oushodh\Data;
-
 /**
  * The unit price in one pack size, from `unit_prices`. Kept for older clients: read `Prices::$sizes`.
  */

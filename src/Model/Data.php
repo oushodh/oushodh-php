@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Oushodh;
+namespace Oushodh\Model;
 
 use Oushodh\Exception\OushodhException;
 
