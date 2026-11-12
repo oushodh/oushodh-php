@@ -4,7 +4,7 @@ The PHP client for the [Oushodh API](https://oushodh.dev/docs): medicine data fo
 DGDA register. It reads the public `/v1` API.
 
 - PHP 8.2 or newer.
-- One runtime dependency: Guzzle 7.
+- One runtime dependency: Guzzle 8.
 
 ## Install
 

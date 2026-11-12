@@ -415,7 +415,7 @@ final class ClientTest extends TestCase
         };
 
         return new class ($key, $maxRetries, $stack, $record) extends Client {
-            public function __construct(?string $key, int $maxRetries, HandlerStack $http, private \Closure $record)
+            public function __construct(?string $key, int $maxRetries, callable $http, private \Closure $record)
             {
                 parent::__construct($key, maxRetries: $maxRetries, http: $http);
             }
